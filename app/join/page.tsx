@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Users, Maximize2, Minimize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Maximize2, Minimize2, Users } from "lucide-react";
 import Peer from "peerjs";
+import { useRef, useState, useEffect } from "react";
 
 export default function JoinPage() {
     const [roomId, setRoomId] = useState("");
@@ -17,11 +17,30 @@ export default function JoinPage() {
     const videoContainerRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
 
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isFullscreenNow = !!(document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement || (document as any).msFullscreenElement);
+            setIsFullscreen(isFullscreenNow);
+        };
+
+        document.addEventListener("fullscreenchange", handleFullscreenChange);
+        document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+        document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+        document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+        return () => {
+            document.removeEventListener("fullscreenchange", handleFullscreenChange);
+            document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+            document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+            document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
+        };
+    }, []);
+
     const toggleFullscreen = async () => {
         if (!videoContainerRef.current) return;
 
-        if (!isFullscreen) {
-            try {
+        try {
+            if (!isFullscreen) {
                 if (videoContainerRef.current.requestFullscreen) {
                     await videoContainerRef.current.requestFullscreen();
                 } else if ((videoContainerRef.current as any).webkitRequestFullscreen) {
@@ -29,23 +48,22 @@ export default function JoinPage() {
                 } else if ((videoContainerRef.current as any).msRequestFullscreen) {
                     await (videoContainerRef.current as any).msRequestFullscreen();
                 }
-                setIsFullscreen(true);
-            } catch (err) {
-                toast({
-                    title: "Fullscreen error",
-                    description: "Could not enter fullscreen mode",
-                    variant: "destructive"
-                });
+            } else {
+                if (document.exitFullscreen) {
+                    await document.exitFullscreen();
+                } else if ((document as any).webkitExitFullscreen) {
+                    await (document as any).webkitExitFullscreen();
+                } else if ((document as any).msExitFullscreen) {
+                    await (document as any).msExitFullscreen();
+                }
             }
-        } else {
-            if (document.exitFullscreen) {
-                await document.exitFullscreen();
-            } else if ((document as any).webkitExitFullscreen) {
-                await (document as any).webkitExitFullscreen();
-            } else if ((document as any).msExitFullscreen) {
-                await (document as any).msExitFullscreen();
-            }
-            setIsFullscreen(false);
+        } catch (err) {
+            console.error("Fullscreen error:", err);
+            toast({
+                title: "Fullscreen error",
+                description: "Could not toggle fullscreen mode",
+                variant: "destructive"
+            });
         }
     };
 
