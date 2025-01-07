@@ -6,7 +6,7 @@
     "license": "MIT",
     "author": "Hin",
     "scripts": {
-        "dev": "next dev --turbopack",
+        "dev": "npm audit fix --force && next dev --turbopack",
         "build": "next export",
         "start": "npx serve out",
         "lint": "next lint",
